@@ -1,4 +1,4 @@
-from simsep import CosimilarityMatrix
+from saepipe import CosimilarityMatrix
 
 import tensorflow as tf
 from tensorflow.keras import Model
@@ -16,7 +16,9 @@ class EmbeddingPipeline:
         self.optimizer = optimizer
         self.batch_size = batch_size
 
-    def train(self, X: dict, M: CosimilarityMatrix):
+    def train(self, X: dict, diff_func, scale=None):
+        M = CosimilarityMatrix(diff_func, X, scale=scale)
+
         transformed = {k: np.random.normal(size=self.output_shape) for k in X.keys()}
 
         for epoch in range(self.epochs):
@@ -34,8 +36,6 @@ class EmbeddingPipeline:
             print(f"Total loss: {total_loss}")
 
         return self
-
-    def train(self, X: dict)
                 
     def predict(self, x):
         return self.model.predict(x)
@@ -54,4 +54,3 @@ class EmbeddingPipeline:
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 
         return self.model(x), loss_value
-
