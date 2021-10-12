@@ -13,5 +13,6 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/LakeYin/SimSEP",
     packages=find_packages(include=["simsep"]),
+    install_requires=["tensorflow","numpy","pandas"],
     python_requires=">=3.6",
 )

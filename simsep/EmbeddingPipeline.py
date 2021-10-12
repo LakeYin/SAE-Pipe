@@ -1,9 +1,9 @@
 from simsep import CosimilarityMatrix
 
 import tensorflow as tf
-from keras import Model
-from keras.losses import MeanSquaredError
-from keras.optimizers import Adam
+from tensorflow.keras import Model
+from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.optimizers import Adam
 import numpy as np
 import random
 
