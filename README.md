@@ -1,2 +1,2 @@
-# SELDS
-Self-supervised embedding of large data structures
+# SimSEP
+SIMilarity based Self-supervised Embedding Pipeline
