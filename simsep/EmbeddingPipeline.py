@@ -34,12 +34,14 @@ class EmbeddingPipeline:
             print(f"Total loss: {total_loss}")
 
         return self
+
+    def train(self, X: dict)
                 
     def predict(self, x):
         return self.model.predict(x)
 
     def _train_step(self, x, y, score):
-        if x.ndim < 2:
+        if not tf.is_tensor(x) and x.ndim < 2:
             x = np.reshape(x, (1, x.size))
 
         with tf.GradientTape() as tape:

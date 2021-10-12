@@ -1,2 +1,2 @@
-# SimSEP
-SIMilarity based Self-supervised Embedding Pipeline
+# SAE-Pipe
+Self-supervised Arbitrary Embedding Pipeline
