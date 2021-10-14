@@ -1,2 +1,2 @@
-from .CosimilarityMatrix import CosimilarityMatrix
+from .DifferenceMatrix import DifferenceMatrix
 from .EmbeddingPipeline import EmbeddingPipeline
