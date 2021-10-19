@@ -8,10 +8,10 @@ class DifferenceMatrix:
             raise TypeError("Cannot match labels to data.")
 
         if (labels is not None) and (not isinstance(labels, dict) and not isinstance(data, dict)):
-            labels = {i: y for i, y in zip(range(len(labels)), labels)}
+            labels = {i: y for i, y in enumerate(labels)}
 
         if not isinstance(data, dict):
-            data = {i: x for i, x in zip(range(len(data)), data)}
+            data = {i: x for i, x in enumerate(data)}
 
         self._func = func
         self._table = self._fill_table(data, labels, scale)

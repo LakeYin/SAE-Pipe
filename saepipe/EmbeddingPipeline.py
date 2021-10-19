@@ -16,15 +16,15 @@ class EmbeddingPipeline:
         self.loss = loss
         self.optimizer = optimizer
 
-    def train(self, X, diff_func, y=None, init='random', scale=None, batch_size=None, epochs=10, verbose=1):
+    def train(self, diff_func, X, y=None, init='random', scale=None, batch_size=None, epochs=10, verbose=1):
         if (y is not None) and (isinstance(y, dict) is not isinstance(X, dict)):
             raise TypeError("Cannot match labels to data.")
 
         if (y is not None) and (not isinstance(y, dict) and not isinstance(X, dict)):
-            y = {i: y for i, y in zip(range(len(y)), y)}
+            y = {i: y for i, y in enumerate(y)}
 
         if not isinstance(X, dict):
-            X = {i: x for i, x in zip(range(len(X)), X)}
+            X = {i: x for i, x in enumerate(X)}
 
         M = DifferenceMatrix(diff_func, X, labels=y, scale=scale)
 
