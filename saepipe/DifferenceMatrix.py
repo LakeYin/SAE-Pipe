@@ -1,44 +1,32 @@
-import pandas as pd
 import numpy as np
 
 class DifferenceMatrix:
     
     def __init__(self, func, data, labels=None, scale=None):
-        if (labels is not None) and (isinstance(labels, dict) is not isinstance(data, dict)):
-            raise TypeError("Cannot match labels to data.")
-
-        if (labels is not None) and (not isinstance(labels, dict) and not isinstance(data, dict)):
-            labels = {i: y for i, y in enumerate(labels)}
-
-        if not isinstance(data, dict):
-            data = {i: x for i, x in enumerate(data)}
-
         self._func = func
-        self._table = self._fill_table(data, labels, scale)
+        self._matrix = self._fill_matrix(data, labels, scale)
 
     def __len__(self):
-        return len(self._table)
+        return len(self._matrix)
 
     def __iter__(self):
         for i in range(len(self)):
             for j in range(len(self)):
-                df = self._table.iloc[[i], [j]]
-                yield df.index[0], df.columns[0], df.squeeze()
+                yield i, j, self._matrix[i, j]
 
     def __repr__(self):
-        return str(self._table)
+        return str(self._matrix)
 
-    def _fill_table(self, data: dict, y: dict, scale):
-        sorted_keys = sorted(data.keys())
-        s = len(sorted_keys)
+    def _fill_matrix(self, data: dict, y: dict, scale):
+        s = len(data)
         M = np.zeros((s, s))
         
         for i in range(s):
             for j in range(i + 1):
                 if y is None:
-                    M[i][j] = self._func(data[sorted_keys[i]], data[sorted_keys[j]])
+                    M[i][j] = self._func(data[i], data[j])
                 else:
-                    M[i][j] = self._func(y[sorted_keys[i]], y[sorted_keys[j]])
+                    M[i][j] = self._func(y[i], y[j])
 
         M = M + M.T - np.diag(np.diag(M))
 
@@ -48,13 +36,16 @@ class DifferenceMatrix:
         if scale is not None:
             M = scale(M, axis=1)
 
-        return pd.DataFrame(M, columns=sorted_keys, index=sorted_keys)    
+        return M
 
     def get_index(self, i, j):
-        return self._table.iloc[i, j]
+        return self._matrix[i, j]
 
-    def get_key(self, key):
-        return self._table.loc[key]
+    def get_entry(self, index):
+        return self._matrix[index]
 
     def get_func(self):
         return self._func
+
+    def get_matrix(self):
+        return self._matrix.copy()

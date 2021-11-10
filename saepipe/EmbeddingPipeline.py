@@ -5,52 +5,44 @@ from tensorflow.keras import Model
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import Progbar
+from tensorflow.keras.models import clone_model
 import numpy as np
 import random
 
 class EmbeddingPipeline:
 
-    def __init__(self, model: Model, output_shape, loss=MeanSquaredError(), optimizer=Adam(), ):
-        self.model = model
-        self.output_shape = output_shape
-        self.loss = loss
-        self.optimizer = optimizer
+    def __init__(self, model: Model, output_shape, loss=MeanSquaredError(), optimizer=Adam()):
+        self._model = clone_model(model)
+        self._output_shape = output_shape
+        self._loss = loss
+        self._optimizer = optimizer
 
     def train(self, diff_func, X, y=None, init='random', scale=None, batch_size=None, epochs=10, verbose=1):
-        if (y is not None) and (isinstance(y, dict) is not isinstance(X, dict)):
-            raise TypeError("Cannot match labels to data.")
-
-        if (y is not None) and (not isinstance(y, dict) and not isinstance(X, dict)):
-            y = {i: y for i, y in enumerate(y)}
-
-        if not isinstance(X, dict):
-            X = {i: x for i, x in enumerate(X)}
-
         M = DifferenceMatrix(diff_func, X, labels=y, scale=scale)
 
         if init == 'random':
-            transformed = {k: np.random.normal(size=self.output_shape) for k in X.keys()}
+            transformed = np.random.normal(size=(len(X), self._output_shape))
         elif init == 'zero':
-            transformed = {k: np.zeros(self.output_shape) for k in X.keys()}
+            transformed = np.zeros((len(X), self._output_shape))
         else:
             raise ValueError("init arg must be 'random' or 'zero'.")
+
+        if batch_size is None:
+            scores = [(i, j, s) for i, j, s in M if i != j]
+        else:
+            pass
 
         for epoch in range(epochs):
             if verbose > 0:
                 print(f"Epoch {epoch + 1}/{epochs}")
 
+            random.shuffle(scores)
+
+            bar = Progbar(len(scores), verbose=verbose)
+
             total_loss = 0
-            
-            if batch_size is None:
-                samples = list(M)
-                random.shuffle(samples)
-            else:
-                pass
-
-            bar = Progbar(len(samples), verbose=verbose)
-
-            for label1, label2, score in samples:
-                transformed[label1], loss_value = self._train_step(X[label1], transformed[label2], score)
+            for index1, index2, score in scores:
+                transformed[index1], loss_value = self._train_step(X[index1], transformed[index2], score)
                 total_loss += loss_value
 
                 bar.add(1)
@@ -60,20 +52,23 @@ class EmbeddingPipeline:
 
         return self
                 
-    def predict(self, x):
-        return self.model.predict(x)
+    def embed(self, x):
+        return self._model.predict(x)
 
-    def _train_step(self, x, y, score):
-        if not tf.is_tensor(x) and x.ndim < 2:
-            x = np.reshape(x, (1, x.size))
+    def get_model(self):
+        return clone_model(self._model)
+
+    def _train_step(self, a, b, score):
+        if isinstance(a, np.ndarray) and a.ndim < 2:
+            a = np.reshape(a, (1, a.size))
 
         with tf.GradientTape() as tape:
-            output = self.model(x, training=True)
+            output = self._model(a, training=True)
 
-            loss_value = self.loss([score], [tf.norm(output - y)])
-            loss_value += sum(self.model.losses)
+            loss_value = self._loss([score], [tf.norm(output - b)])
+            loss_value += sum(self._model.losses)
 
-        grads = tape.gradient(loss_value, self.model.trainable_weights)
-        self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+        grads = tape.gradient(loss_value, self._model.trainable_weights)
+        self._optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
 
-        return self.model(x), loss_value
+        return self._model(a), loss_value
