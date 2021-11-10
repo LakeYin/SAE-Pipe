@@ -1,2 +1,3 @@
 from .DifferenceMatrix import DifferenceMatrix
 from .EmbeddingPipeline import EmbeddingPipeline
+from .utils import root_mean_embedded_error
