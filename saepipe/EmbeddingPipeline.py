@@ -8,17 +8,20 @@ import random
 
 class EmbeddingPipeline:
 
-    def __init__(self, model: Model, output_shape):
+    def __init__(self, model: Model):
         self._model = model
-        self._output_shape = output_shape
 
     def train(self, diff_func, X, y=None, init='zero', scale=None, batch_size=None, epochs=10, verbose=1):
+        input_size = np.shape(X[0])
+        self._model.build((1, input_size[0]) if len(input_size) < 2 else input_size)
+        output_shape = self._model.layers[-1].output_shape[1]
+
         M = DifferenceMatrix(diff_func, X, labels=y, scale=scale)
 
         if init == 'random':
-            transformed = np.random.normal(size=(len(X), self._output_shape))
+            transformed = np.random.normal(size=(len(X), output_shape))
         elif init == 'zero':
-            transformed = np.zeros((len(X), self._output_shape))
+            transformed = np.zeros((len(X), output_shape))
         else:
             raise ValueError("init arg must be 'random' or 'zero'.")
 
@@ -37,8 +40,8 @@ class EmbeddingPipeline:
 
             total_loss = 0
             for index1, index2, diff in diffs:
-                transformed[index1], loss_value = self._train_step(X[index1], transformed[index2], diff)
-                total_loss += loss_value
+                transformed[index1], loss = self._train_step(X[index1], transformed[index2], diff)
+                total_loss += loss
 
                 bar.add(1)
             
