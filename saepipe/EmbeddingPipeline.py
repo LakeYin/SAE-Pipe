@@ -6,9 +6,6 @@ from tensorflow.keras.utils import Progbar
 import numpy as np
 import random
 
-model = Sequential()
-model.fit
-
 class EmbeddingPipeline(Sequential):
     
     def fit(self, diff_func, X, y=None, init='zero', scale=None, batch_size=None, epochs=10, verbose=1, shuffle=True):
