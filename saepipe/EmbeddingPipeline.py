@@ -1,32 +1,36 @@
 from saepipe import DifferenceMatrix
 
 import tensorflow as tf
-from tensorflow.keras import Model
+from tensorflow.keras import Sequential
 from tensorflow.keras.utils import Progbar
 import numpy as np
 import random
 
-class EmbeddingPipeline:
+model = Sequential()
+model.fit
 
-    def __init__(self, model: Model):
-        self._model = model
-
-    def train(self, diff_func, X, y=None, init='zero', scale=None, batch_size=None, epochs=10, verbose=1):
+class EmbeddingPipeline(Sequential):
+    
+    def fit(self, diff_func, X, y=None, init='zero', scale=None, batch_size=None, epochs=10, verbose=1, shuffle=True):
         input_size = np.shape(X[0])
-        self._model.build((1, input_size[0]) if len(input_size) < 2 else input_size)
-        output_shape = self._model.layers[-1].output_shape[1]
+        self.build((1, input_size[0]) if len(input_size) < 2 else input_size)
+
+        if len(self.layers[-1].output_shape) != 2:
+            raise ValueError("Output layer must have a 2D output.")
+
+        output_shape = self.layers[-1].output_shape[1]
 
         M = DifferenceMatrix(diff_func, X, labels=y, scale=scale)
 
         if init == 'random':
-            transformed = np.random.normal(size=(len(X), output_shape))
+            transformed = np.random.normal(size=(len(X), output_shape)).astype(np.float32)
         elif init == 'zero':
-            transformed = np.zeros((len(X), output_shape))
+            transformed = np.zeros((len(X), output_shape), dtype=np.float32)
         else:
             raise ValueError("init arg must be 'random' or 'zero'.")
 
         if batch_size is None:
-            diffs = [(i, j, tf.constant([d])) for i, j, d in M if i != j]
+            diffs = [(i, j, tf.constant([d], dtype=tf.float32)) for i, j, d in M if i != j]
         else:
             pass
 
@@ -34,13 +38,19 @@ class EmbeddingPipeline:
             if verbose > 0:
                 print(f"Epoch {epoch + 1}/{epochs}")
 
-            random.shuffle(diffs)
-
+            if shuffle:
+                random.shuffle(diffs)
+            
             bar = Progbar(len(diffs), verbose=verbose)
 
             total_loss = 0
             for index1, index2, diff in diffs:
-                transformed[index1], loss = self._train_step(X[index1], transformed[index2], diff)
+                x = tf.constant(X[index1], dtype=tf.float32)
+                shape = tf.shape(x)
+                if len(shape) < 2:
+                    x = tf.reshape(x, (1, shape[0]))
+
+                transformed[index1], loss = self.train_step(x, transformed[index2], diff)
                 total_loss += loss
 
                 bar.add(1)
@@ -49,21 +59,16 @@ class EmbeddingPipeline:
                 print(f"Total loss: {total_loss}")
 
         return self
-                
-    def embed(self, x):
-        return self._model.predict(x)
 
-    def _train_step(self, a, b_embed, diff):
-        if isinstance(a, np.ndarray) and a.ndim < 2:
-            a = np.reshape(a, (1, a.size))
-
+    @tf.function
+    def train_step(self, a, b_embed, diff):
         with tf.GradientTape() as tape:
-            a_embed = self._model(a, training=True)
+            a_embed = self(a, training=True)
+        
+            loss = self.compiled_loss(diff, tf.reshape(tf.norm(a_embed - b_embed), (1,)), regularization_losses=self.losses)
 
-            loss = self._model.compiled_loss(diff, tf.reshape(tf.norm(a_embed - b_embed), 1), regularization_losses=self._model.losses)
-
-        trainable_vars = self._model.trainable_variables
+        trainable_vars = self.trainable_variables
         grads = tape.gradient(loss, trainable_vars)
-        self._model.optimizer.apply_gradients(zip(grads, trainable_vars))
+        self.optimizer.apply_gradients(zip(grads, trainable_vars))
 
-        return self._model(a), loss
+        return self(a), loss
