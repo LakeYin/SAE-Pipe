@@ -58,17 +58,18 @@ class EmbeddingPipeline(Sequential):
             if verbose > 0:
                 print(f"Total loss: {total_loss}")
 
-        return self
+        return self.history
 
     @tf.function
     def train_step(self, a, b_embed, diff):
         with tf.GradientTape() as tape:
-            a_embed = self(a, training=True)
-        
-            loss = self.compiled_loss(diff, tf.reshape(tf.norm(a_embed - b_embed), (1,)), regularization_losses=self.losses)
+            embed_diff = tf.reshape(tf.norm(self(a, training=True) - b_embed), (1,))
+
+            loss = self.compiled_loss(diff, embed_diff, regularization_losses=self.losses)
 
         trainable_vars = self.trainable_variables
         grads = tape.gradient(loss, trainable_vars)
         self.optimizer.apply_gradients(zip(grads, trainable_vars))
+        self.compiled_metrics.update_state(diff, embed_diff)
 
         return self(a), loss
