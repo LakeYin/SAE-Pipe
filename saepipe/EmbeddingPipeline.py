@@ -17,7 +17,10 @@ class EmbeddingPipeline(Sequential):
 
         output_shape = self.layers[-1].output_shape[1]
 
-        M = DifferenceMatrix(diff_func, X, labels=y, scale=scale)
+        if y is None:
+            M = DifferenceMatrix(diff_func, X, scale=scale)
+        else:
+            M = DifferenceMatrix(diff_func, y, scale=scale)
 
         if init == 'random':
             transformed = np.random.normal(size=(len(X), output_shape)).astype(np.float32)

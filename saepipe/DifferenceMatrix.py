@@ -2,9 +2,9 @@ import numpy as np
 
 class DifferenceMatrix:
     
-    def __init__(self, func, data, labels=None, scale=None):
+    def __init__(self, func, data, scale=None):
         self._func = func
-        self._matrix = self._fill_matrix(data, labels, scale)
+        self._matrix = self._fill_matrix(data, scale)
 
     def __len__(self):
         return len(self._matrix)
@@ -17,16 +17,13 @@ class DifferenceMatrix:
     def __repr__(self):
         return str(self._matrix)
 
-    def _fill_matrix(self, data: dict, y: dict, scale):
+    def _fill_matrix(self, data, scale):
         s = len(data)
         M = np.zeros((s, s))
         
         for i in range(s):
             for j in range(i + 1):
-                if y is None:
-                    M[i][j] = self._func(data[i], data[j])
-                else:
-                    M[i][j] = self._func(y[i], y[j])
+                M[i, j] = self._func(data[i], data[j])
 
         M = M + M.T - np.diag(np.diag(M))
 
