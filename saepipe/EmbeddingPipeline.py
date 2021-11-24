@@ -5,10 +5,11 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.utils import Progbar
 import numpy as np
 import random
+from collections import Counter
 
 class EmbeddingPipeline(Sequential):
     
-    def fit(self, diff_func, X, y=None, init='zero', scale=None, batch_size=None, epochs=10, verbose=1, shuffle=True):
+    def fit(self, diff_func, X, y=None, init='zero', scale=None, sample_size=None, epochs=10, verbose=1, shuffle=True):
         input_size = np.shape(X[0])
         self.build((1, input_size[0]) if len(input_size) < 2 else input_size)
 
@@ -29,17 +30,25 @@ class EmbeddingPipeline(Sequential):
         else:
             raise ValueError("init arg must be 'random' or 'zero'.")
 
-        if batch_size is None:
-            diffs = [(i, j, tf.constant([d], dtype=tf.float32)) for i, j, d in M if i != j]
-        else:
-            pass
+        all_diffs = [(i, j, tf.constant([d], dtype=tf.float32)) for i, j, d in M if i != j]
 
         for epoch in range(epochs):
             if verbose > 0:
                 print(f"Epoch {epoch + 1}/{epochs}")
 
             if shuffle:
-                random.shuffle(diffs)
+                random.shuffle(all_diffs)
+
+            if sample_size is None:
+                diffs = all_diffs
+            else:
+                diffs = []
+                counts = Counter()
+
+                for t in all_diffs:
+                    if counts[t[0]] < sample_size:
+                        diffs.append(t)
+                    counts[t[0]] += 1
             
             bar = Progbar(len(diffs), verbose=verbose)
 
