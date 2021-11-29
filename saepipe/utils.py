@@ -3,7 +3,11 @@ from saepipe import DifferenceMatrix
 import numpy as np
 
 def root_mean_embedded_error(diff_func, embedding, X, y=None, scale=None):
-    M = DifferenceMatrix(diff_func, X, labels=y, scale=scale).get_matrix()
+    if y is None:
+        M = DifferenceMatrix(diff_func, X, scale=scale).get_matrix()
+    else:
+        M = DifferenceMatrix(diff_func, y, scale=scale).get_matrix()
+        
     N = DifferenceMatrix(lambda a, b: np.linalg.norm(a - b), embedding).get_matrix()
 
     rmse = np.sqrt(np.sum(np.square(M - N)))

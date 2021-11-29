@@ -48,7 +48,7 @@ class EmbeddingPipeline(Sequential):
                 for t in all_diffs:
                     if counts[t[0]] < sample_size:
                         diffs.append(t)
-                    counts[t[0]] += 1
+                        counts[t[0]] += 1
             
             bar = Progbar(len(diffs), verbose=verbose)
 
