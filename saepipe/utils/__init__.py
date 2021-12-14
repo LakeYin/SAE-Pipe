@@ -1,1 +1,1 @@
-from error_functions import *
+from .error_functions import *

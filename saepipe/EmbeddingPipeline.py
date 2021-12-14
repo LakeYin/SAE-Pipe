@@ -9,7 +9,7 @@ from collections import Counter
 
 class EmbeddingPipeline(Sequential):
     
-    def fit(self, diff_func, X, y=None, init='zero', scale=None, sample_size=None, epochs=10, verbose=1, shuffle=True):
+    def fit(self, diff_func, X, y=None, init='zero', scale=None, dist_func=None, sample_size=None, epochs=10, verbose=1, shuffle=True):
         input_size = np.shape(X[0])
         self.build((1, input_size[0]) if len(input_size) < 2 else input_size)
 
@@ -29,6 +29,9 @@ class EmbeddingPipeline(Sequential):
             transformed = np.zeros((len(X), output_shape), dtype=np.float32)
         else:
             raise ValueError("init arg must be 'random' or 'zero'.")
+
+        if dist_func is None:
+            dist_func = lambda a, b: tf.norm(a - b)
 
         all_diffs = [(i, j, tf.constant([d], dtype=tf.float32)) for i, j, d in M if i != j]
 
@@ -59,7 +62,7 @@ class EmbeddingPipeline(Sequential):
                 if len(shape) < 2:
                     x = tf.reshape(x, (1, shape[0]))
 
-                transformed[index1], loss = self.train_step(x, transformed[index2], diff)
+                transformed[index1], loss = self.train_step(x, transformed[index2], diff, dist_func)
                 total_loss += loss
 
                 bar.add(1)
@@ -70,9 +73,9 @@ class EmbeddingPipeline(Sequential):
         return self.history
 
     @tf.function
-    def train_step(self, a, b_embed, diff):
+    def train_step(self, a, b_embed, diff, dist):
         with tf.GradientTape() as tape:
-            embed_diff = tf.reshape(tf.norm(self(a, training=True) - b_embed), (1,))
+            embed_diff = tf.reshape(dist(self(a, training=True), b_embed), (1,))
 
             loss = self.compiled_loss(diff, embed_diff, regularization_losses=self.losses)
 

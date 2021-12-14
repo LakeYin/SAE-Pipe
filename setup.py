@@ -12,7 +12,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/LakeYin/SAE-Pipe",
-    packages=find_packages(include=["saepipe"]),
+    packages=find_packages(),
     install_requires=["tensorflow","numpy"],
     python_requires=">=3.6",
 )
